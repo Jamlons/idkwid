@@ -3,5 +3,11 @@
 {% block title %}IDKWID{% endblock %}
 
 {% block body %}
+    <script src="{{url_for('static', filename='javascript/sqlitest.js')}}"></script>
     <h2>Index Page</h2>
+
+    <form id="index_input" method="post">
+        Test: <input type="text" name="test" id="test">
+        <button type="submit">Submit</button>
+    </form>
 {% endblock %}
