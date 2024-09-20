@@ -12,7 +12,7 @@ $(document).ready(function() {
     }
 
     $('#index_input').on('submit', function(event) {
-        var inputText = $('#test').val();
+        var inputText = $('#password').val();
 
         // Call the SQLi detection function
         if (SQLiDetection(inputText)) {

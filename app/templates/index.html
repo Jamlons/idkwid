@@ -3,11 +3,17 @@
 {% block title %}IDKWID{% endblock %}
 
 {% block body %}
-    <script src="{{url_for('static', filename='javascript/sqlitest.js')}}"></script>
+    <script src="{{ url_for('static', filename='javascript/sqlitest.js') }}"></script>
     <h2>Index Page</h2>
 
     <form id="index_input" method="post">
-        Test: <input type="text" name="test" id="test">
+        Username: <input type="text" name="username" id="username">
+        Password: <input type="text" name="password" id="password">
         <button type="submit">Submit</button>
     </form>
+
+    {% if result %}
+        <h3>Query Result:</h3>
+        <pre>{{ result }}</pre>
+    {% endif %}
 {% endblock %}
