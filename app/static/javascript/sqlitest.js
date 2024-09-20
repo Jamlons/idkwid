@@ -13,9 +13,16 @@ $(document).ready(function() {
 
     $('#index_input').on('submit', function(event) {
         var inputText = $('#password').val();
+        var inputText2 = $('#username').val();
 
         // Call the SQLi detection function
         if (SQLiDetection(inputText)) {
+            event.preventDefault(); // Block form submission if SQLi characters are detected
+        } else {
+            console.log("Form submitted successfully, no SQLi detected.");
+            // No preventDefault here, so the form will submit normally if no SQLi detected
+        }
+        if (SQLiDetection(inputText2)) {
             event.preventDefault(); // Block form submission if SQLi characters are detected
         } else {
             console.log("Form submitted successfully, no SQLi detected.");
