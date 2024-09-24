@@ -3,6 +3,7 @@ from app import app
 from app.db import db
 from sqlalchemy import text
 import os
+import magic
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -37,17 +38,26 @@ def upload_file():
     if request.method == 'POST':
         # Check if the request contains a file
         print(request.files)
-        if 'file' not in request.files:
+        if 'uploaded_file' not in request.files:
             return jsonify({'error': 'No file part.'}), 400
         
-        file = request.files['file']
+        file = request.files['uploaded_file']
         
         # If no file was selected
         if file.filename == '':
             return jsonify({'error': 'No selected file'}), 400
         
-        # If the file is valid, save it
-        if file and allowed_file(file.filename):
+        # Temporarly upload file
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+        
+        # Check MIME type
+        mime = magic.Magic()
+        mime_type = mime.from_file(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))  # Read the first 1024 bytes for MIME type detection
+        print(mime_type)
+
+        # Allow only specific MIME types
+        if mime_type.startswith('JPEG') or mime_type.startswith('PNG'):
             os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
             return jsonify({'success': f'File {file.filename} successfully uploaded!'}), 200
@@ -56,3 +66,6 @@ def upload_file():
     
     # For GET requests, render the file upload form
     return render_template('upload.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
