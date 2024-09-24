@@ -1,17 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}IDKWID{% endblock %}
-
 {% block body %}
     <script src="{{ url_for('static', filename='javascript/sqlitest.js') }}"></script>
-    <h2>Index Page</h2>
 
-    <form id="index_input" method="post">
+    <form id="index_input" method="post" hidden>
         Username: <input type="text" name="username" id="username">
         Password: <input type="text" name="password" id="password">
         <button type="submit">Submit</button>
     </form>
 
+    <h3>OMG maybe I should let people upload files!</h3>
+    <form method="POST" enctype="multipart/form-data" action="/upload" id="file_input">
+        <input type="file" id="uploaded_file" class="file_submit" name="uploaded_file">
+        <button type="submit" id="file_upload_submit" class="file_submit">Submit File</button>
+    </form>
+    <p id="file_submit_restrictions">Only .png, .img, and .jpg allowed.<p>
+
+    <p id="upload_status"></p>
+    
     {% if result %}
         <h3>Query Result:</h3>
         <pre>{{ result }}</pre>

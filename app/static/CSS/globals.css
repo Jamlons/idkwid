@@ -12,3 +12,13 @@ header {
     justify-content: space-between;
     align-items: center;
 }
+
+.file_submit {
+    display: block;
+    margin: 10px;
+}
+
+#file_submit_restrictions {
+    font-size: 0.5em;
+    margin-left: 10px;
+}
