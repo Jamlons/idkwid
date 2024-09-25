@@ -136,7 +136,7 @@ def start_backup():
     if time_remaining <= 0:
         time_remaining = BACKUP_OPEN + (upload_queue * EXTEND_TIME_PER_FILE)
 
-    socketio.emit('backup_status', {'message': f"Backup server started. Time until close: {time_remaining} seconds."})
+    socketio.emit('backup_status', {'message': f"Backup started. Time until close: {time_remaining} seconds."})
 
     if not countdown_thread or not countdown_thread.is_alive():
         countdown_thread = threading.Thread(target=emit_countdown)
@@ -166,7 +166,7 @@ def stop_backup():
     subprocess.run(["sudo", "exportfs", "-u", f"*:{file_path}"])
 
     # Emit a message to the client
-    socketio.emit('backup_status', {'message': "Backup server stopped."})
+    socketio.emit('backup_status', {'message': "Backup has finished. All safe!"})
 
 def handle_upload():
     """Handle the upload, increase the upload counter, and manage the backup server."""
@@ -175,13 +175,14 @@ def handle_upload():
     upload_counter += 1
     upload_queue += 1  # Increase the queue for each upload
 
-    if not backup_active:
-        start_backup()
+    if upload_queue > BACKUP_OPEN:
+        if not backup_active:
+            start_backup()
+        else:
+            time_remaining += EXTEND_TIME_PER_FILE
+            socketio.emit('backup_status', {'message': f"Backup already in-progress. Time until close extended: {time_remaining} seconds."})
     else:
-        time_remaining += EXTEND_TIME_PER_FILE
-        socketio.emit('backup_status', {'message': f"Upload added. Time until close: {time_remaining} seconds."})
-
-    socketio.emit('backup_status', {'message': f"Upload queue: {upload_queue} files."})
+        socketio.emit('backup_status', {'message': f"Upload queue: {upload_queue} files. I'll only start backing these up when I queue up {BACKUP_OPEN} files."})
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
