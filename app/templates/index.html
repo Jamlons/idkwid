@@ -17,11 +17,21 @@
     <p id="file_submit_restrictions">Only .png, .jpg allowed.</p>
 
     <p id="upload_status" class="temp"></p>
-    
+
     {% if result %}
         <h3>Query Result:</h3>
         <div>{{ result|safe }}</div>
     {% endif %}
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
 
     <a href="http://127.0.0.1:8000/app/templates/test.php" id="php_test">Testing test link test.</a>
 {% endblock %}
