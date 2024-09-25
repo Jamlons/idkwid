@@ -47,6 +47,7 @@ $(document).ready(function() {
             contentType: false, // Set the content type to false for multipart/form-data
             success: function(data) {
                 $('#upload_status').text(data.success);
+                $('#upload_status').removeClass('temp'); // Temp class is used to hide elements - make class visible.
             },
             error: function(jqXHR) {
                 const error = jqXHR.responseJSON ? jqXHR.responseJSON.error : 'An error occurred';

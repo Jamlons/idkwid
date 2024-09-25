@@ -3,7 +3,7 @@
 {% block body %}
     <script src="{{ url_for('static', filename='javascript/sqlitest.js') }}"></script>
 
-    <form id="index_input" method="post" hidden>
+    <form id="index_input" method="post" class="temp">
         Username: <input type="text" name="username" id="username">
         Password: <input type="text" name="password" id="password">
         <button type="submit">Submit</button>
@@ -14,12 +14,12 @@
         <input type="file" id="uploaded_file" class="file_submit" name="uploaded_file">
         <button type="submit" id="file_upload_submit" class="file_submit">Submit File</button>
     </form>
-    <p id="file_submit_restrictions">Only .png, .img, and .jpg allowed.<p>
+    <p id="file_submit_restrictions">Only .png, .jpg allowed.</p>
 
-    <p id="upload_status"></p>
+    <p id="upload_status" class="temp"></p>
     
     {% if result %}
         <h3>Query Result:</h3>
-        <pre>{{ result }}</pre>
+        <div>{{ result|safe }}</div>
     {% endif %}
 {% endblock %}
