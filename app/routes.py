@@ -117,57 +117,50 @@ def upload_file(filename):
 
 BACKUP_SERVER = '127.0.0.1'
 BACKUP_OPEN = 10
-UPLOAD_THRESHOLD = 5
 EXTEND_TIME_PER_FILE = 10
 upload_counter = 0
 backup_active = False
 upload_queue = 0
-timer = None
 time_remaining = 0
-
+countdown_thread = None
 
 def start_backup():
     """Start the NFS server and initiate the countdown."""
-    global backup_active, timer, upload_queue, time_remaining
+    global backup_active, time_remaining, countdown_thread
 
     backup_active = True
     print("Starting NFS server and exposing /uploads/")
     file_path = os.path.join(app.config['UPLOAD_FOLDER'])
     subprocess.run(["sudo", "exportfs", "-o", "rw,sync,no_subtree_check,no_root_squash", f"*:{file_path}"])
 
-    # Reset timer and calculate total time to close if it's a new start
     if time_remaining <= 0:
         time_remaining = BACKUP_OPEN + (upload_queue * EXTEND_TIME_PER_FILE)
 
-    # Emit initial backup status
     socketio.emit('backup_status', {'message': f"Backup server started. Time until close: {time_remaining} seconds."})
 
-    # Start a thread to emit countdown updates every second
-    if timer:
-        timer.cancel()  # Cancel the previous timer if it's still running
-    timer = threading.Timer(time_remaining, stop_backup)
-    timer.start()
-
-    threading.Thread(target=emit_countdown).start()
+    if not countdown_thread or not countdown_thread.is_alive():
+        countdown_thread = threading.Thread(target=emit_countdown)
+        countdown_thread.start()
 
 def emit_countdown():
     """Emit countdown updates to the client every second."""
-    global time_remaining
-    while time_remaining > 0:
+    global time_remaining, backup_active
+
+    while time_remaining > 0 and backup_active:
         time.sleep(1)
         time_remaining -= 1
         socketio.emit('countdown', {'time_remaining': time_remaining})
 
-    if time_remaining <= 0:
-        socketio.emit('countdown', {'time_remaining': 0})
+    if time_remaining <= 0 and backup_active:
         stop_backup()
 
 def stop_backup():
     """Stop the backup/NFS server."""
-    global backup_active, upload_queue
+    global backup_active, upload_queue, time_remaining
 
     backup_active = False
     upload_queue = 0  # Reset the upload queue
+    time_remaining = 0  # Reset the time remaining
     print("Stopping NFS server")
     file_path = os.path.join(app.config['UPLOAD_FOLDER'])
     subprocess.run(["sudo", "exportfs", "-u", f"*:{file_path}"])
@@ -180,22 +173,15 @@ def handle_upload():
     global upload_counter, upload_queue, time_remaining
 
     upload_counter += 1
-    upload_queue += 1
+    upload_queue += 1  # Increase the queue for each upload
 
     if not backup_active:
         start_backup()
     else:
         time_remaining += EXTEND_TIME_PER_FILE
-        flash(f"Backup is already active. Upload added, {upload_queue} files in the queue. Time extended by {EXTEND_TIME_PER_FILE} seconds.")
         socketio.emit('backup_status', {'message': f"Upload added. Time until close: {time_remaining} seconds."})
 
-    flash(f"Upload threshold reached, lets sync them so we don't lose them! {upload_queue} files in the queue.")
-
-
-def is_backup_active():
-    """Check if the backup server (NFS) is currently active."""
-    result = subprocess.run(['sudo', 'exportfs'], capture_output=True, text=True)
-    return '/path/to/uploads' in result.stdout
+    socketio.emit('backup_status', {'message': f"Upload queue: {upload_queue} files."})
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
