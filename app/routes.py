@@ -118,11 +118,12 @@ def upload_file(filename):
 BACKUP_SERVER = '127.0.0.1'
 BACKUP_OPEN = 10
 UPLOAD_THRESHOLD = 5
-EXTEND_TIME_PER_FILE = 20
+EXTEND_TIME_PER_FILE = 10
 upload_counter = 0
 backup_active = False
 upload_queue = 0
 timer = None
+time_remaining = 0
 
 
 def start_backup():
