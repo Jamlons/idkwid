@@ -129,7 +129,7 @@ def start_backup():
 
     backup_active = True
     print("Starting NFS server and exposing /uploads/")
-    file_path = os.path(app.config['UPLOAD_FOLDER'])
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'])
     print(file_path)
     subprocess.run(["sudo", "exportfs", "-o", "rw,insecure", f"*:{file_path}"])
 
@@ -148,7 +148,7 @@ def stop_backup():
     backup_active = False
     upload_queue = 0  # Reset the upload queue
     print("Stopping NFS server")
-    file_path = os.path(app.config['UPLOAD_FOLDER'])
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'])
     subprocess.run(["sudo", "exportfs", "-u", f"*:{file_path}"])
     flash("Backup server stopped.")
 
