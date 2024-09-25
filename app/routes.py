@@ -81,8 +81,7 @@ def upload_file(filename):
         # Allow only specific MIME types
         if mime_type.startswith('JPEG') or mime_type.startswith('PNG'):
             handle_upload()
-            files_in_queue += 1
-            return jsonify({'success': f'File {file.filename} successfully uploaded! {files_in_queue} files in queue.'}), 200
+            return jsonify({'success': f'File {file.filename} successfully uploaded! {upload_queue} files in queue.'}), 200
         else:
             os.remove(file_path)
             return jsonify({'error': 'Invalid MIME FILE type. Only .png, .jpg, and .img are allowed.'}), 400
