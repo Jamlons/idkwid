@@ -24,12 +24,22 @@
     {% endif %}
 
     <div id="status"></div>
+    <div id="countdown"></div> <!-- This will show the countdown -->
 
     <script type="text/javascript">
         var socket = io.connect('http://' + document.domain + ':' + location.port);
 
         socket.on('backup_status', function(data) {
             document.getElementById('status').innerHTML = data.message;
+        });
+
+        socket.on('countdown', function(data) {
+            var countdownElement = document.getElementById('countdown');
+            if (data.time_remaining > 0) {
+                countdownElement.innerHTML = "Time remaining: " + data.time_remaining + " seconds.";
+            } else {
+                countdownElement.innerHTML = "Backup server stopped, up-to-date.";
+            }
         });
     </script>
 

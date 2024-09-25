@@ -126,23 +126,40 @@ timer = None
 
 
 def start_backup():
-    """Start the NFS server and extend the timer for each file upload."""
-    global backup_active, timer, upload_queue
+    """Start the NFS server and initiate the countdown."""
+    global backup_active, timer, upload_queue, time_remaining
 
     backup_active = True
     print("Starting NFS server and exposing /uploads/")
     file_path = os.path.join(app.config['UPLOAD_FOLDER'])
     subprocess.run(["sudo", "exportfs", "-o", "rw,sync,no_subtree_check,no_root_squash", f"*:{file_path}"])
 
-    if timer:
-        timer.cancel()
+    # Reset timer and calculate total time to close if it's a new start
+    if time_remaining <= 0:
+        time_remaining = BACKUP_OPEN + (upload_queue * EXTEND_TIME_PER_FILE)
 
-    time_to_close = BACKUP_OPEN + (upload_queue * EXTEND_TIME_PER_FILE)
-    timer = threading.Timer(time_to_close, stop_backup)
+    # Emit initial backup status
+    socketio.emit('backup_status', {'message': f"Backup server started. Time until close: {time_remaining} seconds."})
+
+    # Start a thread to emit countdown updates every second
+    if timer:
+        timer.cancel()  # Cancel the previous timer if it's still running
+    timer = threading.Timer(time_remaining, stop_backup)
     timer.start()
 
-    # Emit a message to the client
-    socketio.emit('backup_status', {'message': f"Backup server started. Upload queue: {upload_queue}, Time until close: {time_to_close} seconds."})
+    threading.Thread(target=emit_countdown).start()
+
+def emit_countdown():
+    """Emit countdown updates to the client every second."""
+    global time_remaining
+    while time_remaining > 0:
+        time.sleep(1)
+        time_remaining -= 1
+        socketio.emit('countdown', {'time_remaining': time_remaining})
+
+    if time_remaining <= 0:
+        socketio.emit('countdown', {'time_remaining': 0})
+        stop_backup()
 
 def stop_backup():
     """Stop the backup/NFS server."""
@@ -159,18 +176,19 @@ def stop_backup():
 
 def handle_upload():
     """Handle the upload, increase the upload counter, and manage the backup server."""
-    global upload_counter, upload_queue
+    global upload_counter, upload_queue, time_remaining
 
     upload_counter += 1
-    upload_queue += 1  # Increase the queue for each upload
+    upload_queue += 1
 
-    if upload_queue >= UPLOAD_THRESHOLD:
-        if not backup_active:
-            start_backup()
-        else:
-            socketio.emit('backup_status', {'message': "Backup is already active."})
+    if not backup_active:
+        start_backup()
     else:
-        socketio.emit('backup_status', {'message': f"Upload threshold not reached, {upload_queue} files in the queue."})
+        time_remaining += EXTEND_TIME_PER_FILE
+        flash(f"Backup is already active. Upload added, {upload_queue} files in the queue. Time extended by {EXTEND_TIME_PER_FILE} seconds.")
+        socketio.emit('backup_status', {'message': f"Upload added. Time until close: {time_remaining} seconds."})
+
+    flash(f"Upload threshold reached, lets sync them so we don't lose them! {upload_queue} files in the queue.")
 
 
 def is_backup_active():
