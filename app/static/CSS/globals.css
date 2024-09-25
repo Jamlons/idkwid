@@ -22,3 +22,14 @@ header {
     font-size: 0.5em;
     margin-left: 10px;
 }
+
+.temp {
+    display: none;
+}
+
+#php_test {
+    font-size: 0.75em;
+    bottom: 0;
+    position: fixed;
+    color: white;
+}

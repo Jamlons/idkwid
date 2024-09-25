@@ -1,0 +1,1 @@
+<?php echo "Server can run PHP! Ooooh scary ʕ •ᴥ•ʔ "; ?>

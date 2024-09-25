@@ -5,6 +5,7 @@ from sqlalchemy import text
 import os
 import magic
 import requests
+import time
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -15,23 +16,35 @@ def index():
         password = request.form['password']
 
         # Vulnerable SQL query (SQLi)
-        query = f"SELECT * FROM user WHERE username = '{username}' AND password = '{password}'"
+        query = f"SELECT * FROM user WHERE username = '{username}'"
 
         # Use session.execute() with text() to run the query
         try:
-            result = db.session.execute(text(query)).fetchall()  # Get all results
-            print(f"Results are: {result}")
+            user_result = db.session.execute(text(query)).fetchall()  # Get all results
 
-            # Format the result for display
-            formatted_result = [f"<User {row.username}>" for row in result]
+            try:
+                if user_result[1]:
+                    print("ha got in!")
+                    result = 'Wow 2 users? I gotta bail hopefully nothing bad happens!<br>' + \
+                             '<br>'.join(str(item) for item in user_result)
+                    print(result)
+                    return render_template('index.html', result=result)
+            except:
+                print("nothing bad here. ha")
 
-            if not formatted_result:
+            if user_result:
+                # Sequential password checking
+                _, _, stored_password = user_result[0]  # Assume only one user for simplicity
+                for i in range(len(stored_password)):
+                    time.sleep(0.05)  # Delay to simulate sequential checking
+                    if stored_password[i] != password[i]:
+                        result = 'Invalid password.'
+            else:
                 result = 'Invalid credentials or no users found.'
         except Exception as e:
             result = f'Error: {str(e)}'
 
     return render_template('index.html', result=result)
-
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
@@ -64,7 +77,8 @@ def upload_file(filename):
         if mime_type.startswith('JPEG') or mime_type.startswith('PNG'):
             return jsonify({'success': f'File {file.filename} successfully uploaded!'}), 200
         else:
-            return jsonify({'error': 'Invalid file type. Only .png, .jpg, and .img are allowed.'}), 400
+            os.remove(file_path)
+            return jsonify({'error': 'Invalid MIME FILE type. Only .png, .jpg, and .img are allowed.'}), 400
     
     # Handle GET requests to retrieve a specific file
     if filename:
