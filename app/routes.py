@@ -170,5 +170,4 @@ def is_backup_active():
     return '/path/to/uploads' in result.stdout
 
 if __name__ == '__main__':
-    app.secret_key = 'supersecretkey'
     app.run(debug=True)
