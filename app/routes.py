@@ -129,7 +129,9 @@ def start_backup():
 
     backup_active = True
     print("Starting NFS server and exposing /uploads/")
-    subprocess.run(["sudo", "exportfs", "-o", "rw,insecure", "*:/path/to/uploads"])
+    file_path = os.path(app.config['UPLOAD_FOLDER'])
+    print(file_path)
+    subprocess.run(["sudo", "exportfs", "-o", "rw,insecure", f"*:{file_path}"])
 
     if timer:
         timer.cancel()
@@ -146,7 +148,8 @@ def stop_backup():
     backup_active = False
     upload_queue = 0  # Reset the upload queue
     print("Stopping NFS server")
-    subprocess.run(["sudo", "exportfs", "-u", "*:/path/to/uploads"])
+    file_path = os.path(app.config['UPLOAD_FOLDER'])
+    subprocess.run(["sudo", "exportfs", "-u", f"*:{file_path}"])
     flash("Backup server stopped.")
 
 def handle_upload():
