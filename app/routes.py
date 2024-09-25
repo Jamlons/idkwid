@@ -1,4 +1,5 @@
 from flask import render_template, request, jsonify, send_from_directory, flash, redirect, url_for
+from flask_socketio import SocketIO, emit
 from app import app
 from app.db import db
 from sqlalchemy import text
@@ -9,7 +10,7 @@ import time
 import subprocess
 import threading
 
-
+socketio = SocketIO(app)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -123,6 +124,7 @@ backup_active = False
 upload_queue = 0
 timer = None
 
+
 def start_backup():
     """Start the NFS server and extend the timer for each file upload."""
     global backup_active, timer, upload_queue
@@ -130,8 +132,7 @@ def start_backup():
     backup_active = True
     print("Starting NFS server and exposing /uploads/")
     file_path = os.path.join(app.config['UPLOAD_FOLDER'])
-    print(file_path)
-    subprocess.run(["sudo", "exportfs", "-o", "rw,insecure", f"*:{file_path}"])
+    subprocess.run(["sudo", "exportfs", "-o", "rw,sync,no_subtree_check,no_root_squash", f"*:{file_path}"])
 
     if timer:
         timer.cancel()
@@ -139,7 +140,9 @@ def start_backup():
     time_to_close = BACKUP_OPEN + (upload_queue * EXTEND_TIME_PER_FILE)
     timer = threading.Timer(time_to_close, stop_backup)
     timer.start()
-    flash(f"Backup server started. Upload queue: {upload_queue}, Time until close: {time_to_close} seconds.")
+
+    # Emit a message to the client
+    socketio.emit('backup_status', {'message': f"Backup server started. Upload queue: {upload_queue}, Time until close: {time_to_close} seconds."})
 
 def stop_backup():
     """Stop the backup/NFS server."""
@@ -150,7 +153,9 @@ def stop_backup():
     print("Stopping NFS server")
     file_path = os.path.join(app.config['UPLOAD_FOLDER'])
     subprocess.run(["sudo", "exportfs", "-u", f"*:{file_path}"])
-    flash("Backup server stopped.")
+
+    # Emit a message to the client
+    socketio.emit('backup_status', {'message': "Backup server stopped."})
 
 def handle_upload():
     """Handle the upload, increase the upload counter, and manage the backup server."""
@@ -159,12 +164,13 @@ def handle_upload():
     upload_counter += 1
     upload_queue += 1  # Increase the queue for each upload
 
-    if not backup_active:
-        start_backup()
+    if upload_queue >= UPLOAD_THRESHOLD:
+        if not backup_active:
+            start_backup()
+        else:
+            socketio.emit('backup_status', {'message': "Backup is already active."})
     else:
-        flash("Backup is already active.")
-
-    flash(f"Upload threshold reached, {upload_queue} files in the queue.")
+        socketio.emit('backup_status', {'message': f"Upload threshold not reached, {upload_queue} files in the queue."})
 
 
 def is_backup_active():
@@ -173,4 +179,4 @@ def is_backup_active():
     return '/path/to/uploads' in result.stdout
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    socketio.run(app, debug=True)

@@ -23,15 +23,15 @@
         <div>{{ result|safe }}</div>
     {% endif %}
 
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul>
-        {% for message in messages %}
-          <li>{{ message }}</li>
-        {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
+    <div id="status"></div>
+
+    <script type="text/javascript">
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        socket.on('backup_status', function(data) {
+            document.getElementById('status').innerHTML = data.message;
+        });
+    </script>
 
     <a href="http://127.0.0.1:8000/app/templates/test.php" id="php_test">Testing test link test.</a>
 {% endblock %}
