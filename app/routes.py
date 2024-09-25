@@ -77,6 +77,7 @@ def upload_file(filename):
         if mime_type.startswith('JPEG') or mime_type.startswith('PNG'):
             return jsonify({'success': f'File {file.filename} successfully uploaded!'}), 200
         else:
+            os.remove(file_path)
             return jsonify({'error': 'Invalid file type. Only .png, .jpg, and .img are allowed.'}), 400
     
     # Handle GET requests to retrieve a specific file
