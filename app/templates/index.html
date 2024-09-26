@@ -17,11 +17,37 @@
     <p id="file_submit_restrictions">Only .png, .jpg allowed.</p>
 
     <p id="upload_status" class="temp"></p>
-    
+
     {% if result %}
         <h3>Query Result:</h3>
         <div>{{ result|safe }}</div>
     {% endif %}
+
+    <div id="status"></div>
+    <div id="countdown"></div> <!-- This will show the countdown -->
+
+    <script type="text/javascript">
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+        socket.on('backup_status', function(data) {
+            var statusElement = document.getElementById('status');
+            statusElement.innerHTML = data.message;
+        });
+
+        socket.on('countdown', function(data) {
+            var countdownElement = document.getElementById('countdown');
+            var statusElement = document.getElementById('status');
+            if (data.time_remaining > 0) {
+                countdownElement.innerHTML = "Time remaining: " + data.time_remaining + " seconds.";
+            } else {
+                countdownElement.innerHTML = "Backup server stopped.";
+
+                setTimeout(function() {
+                    countdownElement.innerHTML = '';
+                    statusElement.innerHTML = '';
+                }, 5000);
+            }
+        });
+    </script>
 
     <a href="http://127.0.0.1:8000/app/templates/test.php" id="php_test">Testing test link test.</a>
 {% endblock %}
