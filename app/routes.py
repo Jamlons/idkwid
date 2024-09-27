@@ -10,7 +10,7 @@ import time
 import subprocess
 import threading
 
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode='threading')
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -183,7 +183,7 @@ def stop_backup():
     time.sleep(1)
     socketio.emit('backup_status', {'message': "Sending Print."})
     time.sleep(1)
-    socketio.emit('backup_status', {'message': "ERROR - DRIVER NOT FOUND."})
+    socketio.emit('backup_status', {'message': "ERROR - DRIVER NOT FOUND"})
 
 
 def handle_upload():
