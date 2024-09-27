@@ -10,7 +10,7 @@ import time
 import subprocess
 import threading
 
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode='threading')
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -163,8 +163,26 @@ def stop_backup():
     file_path = os.path.join(app.config['UPLOAD_FOLDER'])
     subprocess.run(["sudo", "exportfs", "-u", f"*:{file_path}"])
 
-    # Emit a message to the client
     socketio.emit('backup_status', {'message': "Backup has finished. All safe!"})
+    time.sleep(2)
+    socketio.emit('backup_status', {'message': "Searching for Printers."})
+    time.sleep(1)
+    socketio.emit('backup_status', {'message': "Searching for Printers.."})
+    time.sleep(1)
+    socketio.emit('backup_status', {'message': "Searching for Printers..."})
+    time.sleep(1)
+    socketio.emit('backup_status', {'message': "Searching for Printers."})
+    time.sleep(1)
+    socketio.emit('backup_status', {'message': "Searching for Printers.."})
+    time.sleep(1)
+    socketio.emit('backup_status', {'message': "Searching for Printers..."})
+    time.sleep(1)
+    socketio.emit('backup_status', {'message': "1 Printer found. idkwid//Mr-Krabs_Printer."})
+    time.sleep(1)
+    socketio.emit('backup_status', {'message': "Sending Print."})
+    time.sleep(1)
+    socketio.emit('backup_status', {'message': "ERROR - DRIVER NOT FOUND"})
+
 
 def handle_upload():
     """Handle the upload, increase the upload counter, and manage the backup server."""
