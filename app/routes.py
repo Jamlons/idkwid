@@ -27,29 +27,31 @@ def index():
         try:
             user_result = db.session.execute(text(query)).fetchall()  # Get all results
 
-            try:
-                if user_result[1]:
-                    print("ha got in!")
-                    result = 'Wow 2 users? I gotta bail hopefully nothing bad happens!<br>' + \
-                             '<br>'.join(str(item) for item in user_result)
-                    print(result)
-                    return render_template('index.html', result=result)
-            except:
-                print("nothing bad here. ha")
-
-            if user_result:
+            if len(user_result) == 0:
+                result = f"No such username {user_result} found!"
+            elif len(user_result) > 1:
+                result = f"Multiple users {user_result} grabbed. Bailing out."
+            elif user_result:
                 # Sequential password checking
                 _, _, stored_password = user_result[0]  # Assume only one user for simplicity
+                print(f"DB password is: {stored_password}")
+                print(f"recieved password is: {password}")
                 for i in range(len(stored_password)):
-                    time.sleep(0.05)  # Delay to simulate sequential checking
-                    if stored_password[i] != password[i]:
+                    if stored_password[i] == password[i]:
+                        print("so good so far")
+                        time.sleep(0.0005)
+                    else:
+                        print(f"characters do not match!: {stored_password[i]}  {password[i]}")
                         result = 'Invalid password.'
+                        break
+                result = f"Logged in! Welcome {username}"
             else:
-                result = 'Invalid credentials or no users found.'
+                result = f'Invalid credentials or no username found.'
         except Exception as e:
             result = f'Error: {str(e)}'
 
     return render_template('index.html', result=result)
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
@@ -85,7 +87,7 @@ def upload_file(filename):
             return jsonify({'success': f'File {file.filename} successfully uploaded! {upload_queue} files in queue.'}), 200
         else:
             os.remove(file_path)
-            return jsonify({'error': 'Invalid MIME FILE type. Only .png, .jpg, and .img are allowed.'}), 400
+            return jsonify({'error': 'Invalid MIME FILE type. Only .png and .jpg are allowed.'}), 400
 
     # Handle GET requests to retrieve a specific file
     if filename:
@@ -97,7 +99,7 @@ def upload_file(filename):
                         php_code = f.read()
                     response = requests.post(f'http://localhost:8000/uploads/{filename}', data=php_code)
 
-                    return response.text, response.status_code
+                    return jsonify({"text":response.text, "status":response.status_code}), 200
                 except Exception as e:
                     return jsonify({'error': str(e)}), 500
 
@@ -106,12 +108,8 @@ def upload_file(filename):
         else:
             return jsonify({'error': 'File not found.'}), 404
 
-    # For GET requests without a filename, list uploaded files
-    uploaded_files = os.listdir(app.config['UPLOAD_FOLDER'])
-    if uploaded_files:
-        return jsonify({'uploaded_files': uploaded_files}), 200
-    else:
-        return jsonify({'error': 'No files uploaded yet.'}), 404
+    # For GET requests without a filename, reject access attempt.
+    return jsonify({'access': 'Access Denied!'}), 403
 
 #NFS Stuff here
 
